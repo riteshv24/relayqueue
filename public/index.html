@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>RelayQueue · Delivery console</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <aside class="sidebar">
+      <a class="brand" href="/" aria-label="RelayQueue home"
+        ><span class="brand-mark" aria-hidden="true">↗</span
+        ><span>RelayQueue<small>EVENT INFRASTRUCTURE</small></span></a
+      >
+      <div class="workspace">
+        <span class="workspace-icon">R</span>
+        <div>Local workspace<small>Developer environment</small></div>
+        <span class="workspace-chevron" aria-hidden="true">⌄</span>
+      </div>
+      <div class="nav-caption">WORKSPACE</div>
+      <nav aria-label="Main navigation">
+        <a class="nav-item active" href="/" aria-current="page"
+          ><span aria-hidden="true">▦</span>Delivery console<span
+            class="nav-dot"
+          ></span
+        ></a>
+      </nav>
+      <section class="sidebar-note">
+        <span class="eyebrow">BUILT TO RECOVER</span>
+        <h2>Every event.<br />Accounted for.</h2>
+        <p>
+          Track deliveries, inspect retries, and replay failed events from one
+          place.
+        </p>
+        <div class="line-art" aria-hidden="true">
+          <i></i><i></i><i></i><i></i><i></i>
+        </div>
+      </section>
+      <div class="sidebar-bottom">
+        <span class="connection-dot" id="sidebar-dot"></span
+        ><span id="sidebar-status">Not connected</span
+        ><span class="version">v1.0</span>
+      </div>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <div class="breadcrumb">
+          Workspace <span>/</span> <strong>Delivery console</strong>
+        </div>
+        <button class="quiet-button" id="connection-button">Connect API</button>
+      </header>
+      <div class="page-content">
+        <section class="page-heading">
+          <div>
+            <div class="eyebrow">OBSERVE · RETRY · RECOVER</div>
+            <h1>Delivery console</h1>
+            <p>A clear view of every event, from acceptance to delivery.</p>
+          </div>
+          <button class="button primary" id="new-event-button" disabled>
+            <span aria-hidden="true">+</span> Create event
+          </button>
+        </section>
+
+        <div id="notice" class="notice" role="status" hidden></div>
+        <section
+          id="connect-panel"
+          class="connect-panel"
+          aria-labelledby="connect-heading"
+        >
+          <div>
+            <h2 id="connect-heading">Connect your queue</h2>
+            <p>Enter the API key configured in your server environment.</p>
+          </div>
+          <form id="connect-form">
+            <label class="sr-only" for="api-key">API key</label
+            ><input
+              id="api-key"
+              type="password"
+              placeholder="Enter your API key"
+              required
+              autocomplete="off"
+              spellcheck="false"
+            /><button class="button primary" id="connect-submit" type="submit">
+              Connect
+            </button>
+          </form>
+          <p class="key-help">
+            Local development key:
+            <code>rq_demo_change_me_32_characters_minimum</code><br />Your key
+            stays in this browser tab for the session.
+          </p>
+        </section>
+
+        <section class="stats" aria-label="Queue statistics">
+          <article class="stat-card">
+            <div class="stat-label">
+              <span>Pending</span
+              ><span class="stat-symbol amber" aria-hidden="true">◷</span>
+            </div>
+            <strong id="stat-pending">—</strong
+            ><span class="stat-description">Waiting for delivery</span>
+          </article>
+          <article class="stat-card">
+            <div class="stat-label">
+              <span>Processing</span
+              ><span class="stat-symbol blue" aria-hidden="true">↗</span>
+            </div>
+            <strong id="stat-processing">—</strong
+            ><span class="stat-description">Currently in flight</span>
+          </article>
+          <article class="stat-card">
+            <div class="stat-label">
+              <span>Succeeded</span
+              ><span class="stat-symbol green" aria-hidden="true">✓</span>
+            </div>
+            <strong id="stat-succeeded">—</strong
+            ><span class="stat-description">Delivered to destination</span>
+          </article>
+          <article class="stat-card">
+            <div class="stat-label">
+              <span>Dead letter</span
+              ><span class="stat-symbol red" aria-hidden="true">!</span>
+            </div>
+            <strong id="stat-dead">—</strong
+            ><span class="stat-description">Ready for investigation</span>
+          </article>
+        </section>
+
+        <div class="console-grid">
+          <section class="events-panel panel" aria-labelledby="events-heading">
+            <div class="panel-heading">
+              <div>
+                <h2 id="events-heading">Event stream</h2>
+                <p id="event-count">Connect to load your events</p>
+              </div>
+              <button
+                id="refresh-button"
+                class="icon-button"
+                aria-label="Refresh events"
+                title="Refresh events"
+                disabled
+              >
+                ↻
+              </button>
+            </div>
+            <div class="filter-bar">
+              <label for="status-filter">Status</label
+              ><select id="status-filter" disabled>
+                <option value="">All events</option>
+                <option value="pending">Pending</option>
+                <option value="processing">Processing</option>
+                <option value="succeeded">Succeeded</option>
+                <option value="dead">Dead letter</option></select
+              ><span class="live-label" id="live-label"
+                ><span></span>Live updates paused</span
+              >
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Event / Type</th>
+                    <th>Status</th>
+                    <th>Attempts</th>
+                    <th>Created</th>
+                  </tr>
+                </thead>
+                <tbody id="event-rows"></tbody>
+              </table>
+            </div>
+            <div id="events-empty" class="empty-state">
+              <div class="empty-icon" aria-hidden="true">⇄</div>
+              <h3>Your event stream starts here</h3>
+              <p>Connect your API to inspect queue activity.</p>
+            </div>
+            <div class="pagination">
+              <span id="page-label">Page 1</span>
+              <div>
+                <button class="quiet-button" id="previous-page" disabled>
+                  ← Previous</button
+                ><button class="quiet-button" id="next-page" disabled>
+                  Next →
+                </button>
+              </div>
+            </div>
+          </section>
+          <aside class="detail-panel panel" aria-labelledby="detail-heading">
+            <div class="panel-heading">
+              <div>
+                <div class="eyebrow">INSPECTOR</div>
+                <h2 id="detail-heading">Event details</h2>
+              </div>
+              <span class="inspector-icon" aria-hidden="true">⌘</span>
+            </div>
+            <div id="detail-empty" class="detail-empty">
+              <div class="detail-illustration" aria-hidden="true">
+                <span></span><span></span><span></span>
+              </div>
+              <h3>Follow the full journey</h3>
+              <p>
+                Select an event to see its payload, delivery attempts, and
+                errors.
+              </p>
+            </div>
+            <div id="event-detail" hidden></div>
+          </aside>
+        </div>
+        <footer class="page-footer">
+          <span
+            >RELAYQUEUE <span class="footer-divider">/</span> Reliable delivery,
+            visible by design.</span
+          ><span id="last-updated">Awaiting connection</span>
+        </footer>
+      </div>
+    </main>
+
+    <dialog id="event-dialog">
+      <form id="event-form">
+        <div class="dialog-heading">
+          <div>
+            <div class="eyebrow">PUBLISH TO QUEUE</div>
+            <h2>Create an event</h2>
+          </div>
+          <button
+            class="icon-button"
+            type="button"
+            id="close-dialog"
+            aria-label="Close dialog"
+          >
+            ×
+          </button>
+        </div>
+        <p class="dialog-description">
+          The worker delivers this payload to the configured webhook
+          destination.
+        </p>
+        <label for="event-type">Event type</label
+        ><input
+          id="event-type"
+          value="build.completed"
+          required
+          maxlength="120"
+          placeholder="build.completed"
+        />
+        <div class="field-row">
+          <div>
+            <label for="max-attempts">Maximum attempts</label
+            ><input
+              id="max-attempts"
+              type="number"
+              value="5"
+              min="1"
+              max="10"
+              required
+            />
+          </div>
+          <div>
+            <label for="idempotency-key">Idempotency key</label
+            ><input
+              id="idempotency-key"
+              required
+              maxlength="200"
+              spellcheck="false"
+            />
+          </div>
+        </div>
+        <label for="event-payload"
+          >Payload <span class="label-hint">JSON object</span></label
+        ><textarea id="event-payload" spellcheck="false" rows="9" required>
+{
+  "commit": "a1b2c3d",
+  "branch": "main",
+  "status": "passed"
+}</textarea>
+        <p id="form-error" class="form-error" role="alert" hidden></p>
+        <div class="dialog-actions">
+          <button type="button" class="button secondary" id="reset-demo">
+            Use demo payload</button
+          ><button class="button primary" type="submit" id="publish-button">
+            Publish event ↗
+          </button>
+        </div>
+      </form>
+    </dialog>
+    <script src="/app.js" defer></script>
+  </body>
+</html>

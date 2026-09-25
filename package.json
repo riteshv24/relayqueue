@@ -1,0 +1,30 @@
+{
+  "name": "relayqueue",
+  "version": "1.0.0",
+  "description": "Durable webhook delivery with retries, fenced leases and signed requests.",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test dist/test/*.test.js",
+    "start": "node --env-file-if-exists=.env dist/src/main.js",
+    "demo": "npm run build && node --env-file-if-exists=.env dist/src/main.js --demo",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "keywords": [],
+  "author": "Ritesh Varma Dommaraju",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "fastify": "^5.12.5",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.6",
+    "prettier": "^3.9.9",
+    "typescript": "^7.0.2"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=24 <25"
+  }
+}

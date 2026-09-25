@@ -1,0 +1,17 @@
+services:
+  relayqueue:
+    build: .
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      HOST: 0.0.0.0
+      DATABASE_PATH: /app/data/relayqueue.db
+      API_KEY: ${API_KEY:-rq_demo_change_me_32_characters_minimum}
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET:-whsec_demo_change_me_32_characters_minimum}
+      DESTINATION_URL: http://127.0.0.1:4001/webhook
+      DEMO_FAIL_FIRST: ${DEMO_FAIL_FIRST:-2}
+    volumes:
+      - queue-data:/app/data
+    restart: unless-stopped
+volumes:
+  queue-data:
