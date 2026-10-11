@@ -1,0 +1,8 @@
+services:
+  app:
+    image: app-ci:${CI_IMAGE_TAG:?Run from CI or set a local test image tag}
+    ports: ['127.0.0.1:3000:3000']
+    environment:
+      NODE_ENV: production
+      API_KEY: ci-only-workspace-key-not-a-production-secret
+      WEBHOOK_SECRET: ci-only-webhook-secret-not-a-production-secret
