@@ -1,0 +1,88 @@
+name: CI
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  merge_group:
+  workflow_call:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+defaults:
+  run:
+    shell: bash
+jobs:
+
+  tests:
+    name: Tests and production build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Release guard regression tests
+        run: python3 scripts/test_release_validation.py
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  containers:
+    name: Container integration
+    needs: [tests]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      CI_IMAGE_TAG: ${{ github.sha }}
+      COMPOSE_PROJECT_NAME: ci-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build release images
+        run: |
+          docker build --label "org.opencontainers.image.revision=$GITHUB_SHA" -f Dockerfile -t "app-ci:$GITHUB_SHA" .
+      - name: Start isolated integration stack
+        run: docker compose -f .github/compose.ci.yml up --detach --wait --wait-timeout 120
+      - name: Verify frontend and API in packaged images
+        env:
+          CI_CONTAINER_SMOKE: '1'
+        run: python3 scripts/ci_container_smoke.py
+      - name: Export the images that passed testing
+        run: |
+          mkdir -p ci-artifacts
+          docker save "app-ci:$GITHUB_SHA" | gzip > ci-artifacts/images.tar.gz
+          cd ci-artifacts
+          sha256sum images.tar.gz > SHA256SUMS
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: container-${{ github.sha }}
+          path: |
+            ci-artifacts/images.tar.gz
+            ci-artifacts/SHA256SUMS
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+      - name: Show container logs
+        if: failure()
+        run: docker compose -f .github/compose.ci.yml logs --no-color
+      - name: Remove disposable stack and data
+        if: always()
+        run: docker compose -f .github/compose.ci.yml down --volumes --remove-orphans
+  gate:
+    name: CI gate
+    if: always()
+    needs: [tests, containers]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Require every check to succeed
+        env:
+          ALL_PASSED: ${{ needs.tests.result == 'success' && needs.containers.result == 'success' }}
+        run: test "$ALL_PASSED" = true

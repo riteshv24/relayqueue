@@ -216,3 +216,7 @@ For a code-reading path and design discussions, see [the interview guide](docs/I
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+## Pull requests and releases
+
+Changes are checked by GitHub Actions before release. See [the release guide](docs/RELEASING.md) for PR checks, required repository settings, tested container images, and deployment setup.
